@@ -112,29 +112,6 @@ class JavaMethodCall(JavaExpression):
         self.method_name = method_name
         self.args = args
 
-    def check_types(self):
-        receiver_type = self.receiver.static_type()
-
-        method_name = receiver_type.name + "." + self.method_name + "()"
-
-        expected_types = receiver_type.method_named(self.method_name).argument_types
-        actual_types = [arg.static_type() for arg in self.args]
-
-        if len(expected_types) != len(actual_types):
-            raise JavaArgumentCountError(
-                "Wrong number of arguments for {0}: expected {1}, got {2}".format(
-                    method_name,
-                    len(expected_types),
-                    len(actual_types)))
-
-        for (expected_type, actual_type) in zip(expected_types, actual_types):
-            if not actual_type.is_subtype_of(expected_type):
-                raise JavaTypeMismatchError(
-                    "{0} expects arguments of type {1}, but got {2}".format(
-                        method_name,
-                        _names(expected_types),
-                        _names(actual_types)))
-
     def static_type(self):
         return self.receiver.static_type().method_named(self.method_name).return_type
 
