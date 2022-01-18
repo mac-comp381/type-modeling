@@ -43,9 +43,6 @@ class JavaVariable(JavaExpression):
         """A variable’s compile-time type is always its declared type. """
         return self.declared_type
 
-    def check_types(self):
-        pass
-
 
 class JavaLiteral(JavaExpression):
     """A literal value entered in the code, e.g. `5` in the expression `x + 5`.
@@ -56,9 +53,6 @@ class JavaLiteral(JavaExpression):
 
     def static_type(self):
         return self.type
-
-    def check_types(self):
-        pass
 
 
 class JavaNullLiteral(JavaLiteral):
