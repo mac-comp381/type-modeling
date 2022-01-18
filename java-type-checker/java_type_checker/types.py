@@ -88,8 +88,6 @@ class JavaPrimitiveType(JavaType):
 
     Primitive types are not object types and do not have methods.
     """
-    def is_subtype_of(self, other):
-        return self == other
 
 
 class JavaObjectType(JavaType):
@@ -123,11 +121,6 @@ class JavaObjectType(JavaType):
 
     def add_method(self, method):
         self.methods[method.name] = method
-
-    def is_subtype_of(self, other):
-        return(
-            other == self
-            or any(t.is_subtype_of(other) for t in self.direct_supertypes))
 
     def method_named(self, name):
         try:
