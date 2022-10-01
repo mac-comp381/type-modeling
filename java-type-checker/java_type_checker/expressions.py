@@ -82,14 +82,6 @@ class JavaAssignment(JavaExpression):
     def static_type(self):
         return self.lhs.static_type()  # Also OK to use declared_type directly
 
-    def check_types(self):
-        if not self.rhs.static_type().is_subtype_of(self.lhs.static_type()):
-            raise JavaTypeMismatchError(
-                "Cannot assign {2} to variable {0} of type {1}".format(
-                    self.lhs.name,
-                    self.lhs.static_type().name,
-                    self.rhs.static_type().name))
-
 
 class JavaMethodCall(JavaExpression):
     """A Java method invocation.
