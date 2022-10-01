@@ -122,15 +122,28 @@ class JavaMethodCall(JavaExpression):
         self.receiver.check_types()
         receiver_type = self.receiver.static_type()
 
-        # The _check_arg_types helper is a solution to the extra challenge in the homework of
-        # adding support for JavaConstructorCall with minimal duplicated code. If you want to
-        # check your implementation of JavaMethodCall, most of the action is in _check_arg_types
-        # down below.
+        for arg in self.args:
+            arg.check_types()
 
-        _check_arg_types(
-            receiver_type.name + "." + self.method_name + "()",
-            callable=receiver_type.method_named(self.method_name),
-            args=self.args)
+        method_name = receiver_type.name + "." + self.method_name + "()"
+
+        expected_types = receiver_type.method_named(self.method_name).argument_types
+        actual_types = [arg.static_type() for arg in self.args]
+
+        if len(expected_types) != len(actual_types):
+            raise JavaArgumentCountError(
+                "Wrong number of arguments for {0}: expected {1}, got {2}".format(
+                    method_name,
+                    len(expected_types),
+                    len(actual_types)))
+
+        for (expected_type, actual_type) in zip(expected_types, actual_types):
+            if not actual_type.is_subtype_of(expected_type):
+                raise JavaTypeMismatchError(
+                    "{0} expects arguments of type {1}, but got {2}".format(
+                        method_name,
+                        _names(expected_types),
+                        _names(actual_types)))
 
     def static_type(self):
         return self.receiver.static_type().method_named(self.method_name).return_type
@@ -154,51 +167,6 @@ class JavaConstructorCall(JavaExpression):
     def __init__(self, instantiated_type, *args):
         self.instantiated_type = instantiated_type
         self.args = args
-
-    def check_types(self):
-        if not self.instantiated_type.is_instantiable:
-            raise JavaIllegalInstantiationError(
-                "Type {0} is not instantiable".format(
-                    self.instantiated_type.name))
-
-        _check_arg_types(
-            self.instantiated_type.name + " constructor",
-            callable=self.instantiated_type.constructor,
-            args=self.args)
-
-    def static_type(self):
-        return self.instantiated_type
-
-
-def _check_arg_types(call_name, callable, args):
-    """Checks the types of the actual arguments against the declared parameter types for either
-    a method call or a constructor call.
-
-    Parameters:
-        call_name (str): The name for this method/constructor to show in error messages
-        callable (JavaMethodCall or JavaConstructorCall): Declaration of the thing being called
-        args (list of Expressions): provided arguments
-    """
-    for arg in args:
-        arg.check_types()
-
-    expected_types = callable.parameter_types
-    actual_types = [arg.static_type() for arg in args]
-
-    if len(expected_types) != len(actual_types):
-        raise JavaArgumentCountError(
-            "Wrong number of arguments for {0}: expected {1}, got {2}".format(
-                call_name,
-                len(expected_types),
-                len(actual_types)))
-
-    for(expected_type, actual_type) in zip(expected_types, actual_types):
-        if not actual_type.is_subtype_of(expected_type):
-            raise JavaTypeMismatchError(
-                "{0} expects arguments of type {1}, but got {2}".format(
-                    call_name,
-                    _names(expected_types),
-                    _names(actual_types)))
 
 
 class JavaTypeMismatchError(JavaTypeError):

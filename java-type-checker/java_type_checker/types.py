@@ -150,9 +150,6 @@ class JavaVoidType(JavaType):
     def __init__(self):
         super().__init__("void")
 
-    def is_subtype_of(self, other):
-        return self == other
-
 
 class JavaNullType(JavaType):
     is_object_type = True
