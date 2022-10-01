@@ -83,12 +83,6 @@ class JavaAssignment(JavaExpression):
         return self.lhs.static_type()  # Also OK to use declared_type directly
 
     def check_types(self):
-        # Checking LHS isn’t strictly necessary, since variable expressions can never have type
-        # errors. But it’s good to do for completeness, in case we were to start allowing more
-        # complex expression on the LHS in the future.
-        self.lhs.check_types()
-        self.rhs.check_types()  # Checking the RHS _is_ necessary!
-
         if not self.rhs.static_type().is_subtype_of(self.lhs.static_type()):
             raise JavaTypeMismatchError(
                 "Cannot assign {2} to variable {0} of type {1}".format(
@@ -119,11 +113,7 @@ class JavaMethodCall(JavaExpression):
         self.args = args
 
     def check_types(self):
-        self.receiver.check_types()
         receiver_type = self.receiver.static_type()
-
-        for arg in self.args:
-            arg.check_types()
 
         method_name = receiver_type.name + "." + self.method_name + "()"
 
