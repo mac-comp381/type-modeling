@@ -161,4 +161,31 @@ class PythonObjectTest {
         assertEquals(PythonString.class, pyobj.getClass());
         assertEquals(str, pyobj.toString());
     }
+
+    @Test
+    void overrideInheritedAttrsWithNull() throws Exception {
+    // Set the attribute "flavor" on fooType to some non-null value.
+        fooType.set("flavor", new PythonString("vanilla"));
+
+        // Verify that fooType and foo (an instance of fooType) have the "flavor" attribute.
+        assertEqualsPyStr("vanilla", fooType.get("flavor"));
+        assertEqualsPyStr("vanilla", foo.get("flavor"));  // Inherited from fooType
+        assertEqualsPyStr("vanilla", bar.get("flavor"));  // Class attribute remains unchanged
+
+        foo.set("flavor", null);
+        assertEquals(null, foo.get("flavor"));  // Should return null, not "vanilla"
+
+        // Verify that the class fooType still has the original value for "flavor"
+        assertEqualsPyStr("vanilla", fooType.get("flavor"));  // Class attribute remains unchanged
+        
+        // change if type has null flavor and object instance has chocolate flavor
+        foo.set("flavor", new PythonString("chocolate"));
+        fooType.set("flavor", null);
+        assertEquals(null, fooType.get("flavor"));
+        assertEqualsPyStr("chocolate", foo.get("flavor"));
+        assertEquals(null, barType.get("flavor"));
+        assertEquals(null, bar.get("flavor"));
+
+    }
+
 }

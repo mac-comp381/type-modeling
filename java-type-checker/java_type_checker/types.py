@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
 
+from collections import deque
+
+
 class JavaType(object):
     """The base type for all Java types, including object types, primitives, and special types.
 
@@ -20,7 +23,7 @@ class JavaType(object):
 
         Subclasses must override this.
         """
-        raise NotImplementedError(type(self).__name__ + " must override is_subtype_of()")
+        pass
 
     def is_supertype_of(self, other):
         """Convenience counterpart to is_subtype_of().
@@ -33,7 +36,8 @@ class JavaType(object):
         Raises:
             NoSuchJavaMethod if the type has no method with the give name (or no methods at all)
         """
-        raise NoSuchJavaMethod("Type {0} does not have methods".format(self.name))
+        # raise NoSuchJavaMethod("Type {0} does not have methods".format(self.name))
+        pass
 
 
 class JavaConstructor(object):
@@ -88,6 +92,11 @@ class JavaPrimitiveType(JavaType):
 
     Primitive types are not object types and do not have methods.
     """
+    # @Override
+    def is_subtype_of(self, other):  
+        if other.is_object_type or other.is_instantiable: return False
+        if self.name == other.name: return True
+        return False
 
 
 class JavaObjectType(JavaType):
@@ -132,6 +141,17 @@ class JavaObjectType(JavaType):
                 except NoSuchJavaMethod:
                     pass
             raise NoSuchJavaMethod("{0} has no method named {1}".format(self.name, name))
+    
+    def is_subtype_of(self, other):   
+        if self.name == other.name: return True
+        if other ==  JavaBuiltInTypes.OBJECT: return True 
+        q = deque(self.direct_supertypes)
+        while q:
+            type = q.popleft()
+            if type == other: return True
+            if type is not None and type.direct_supertypes is not None:
+                q.extend(type.direct_supertypes)
+        return False
 
 
 class JavaVoidType(JavaType):
@@ -152,6 +172,12 @@ class JavaNullType(JavaType):
     """
     def __init__(self):
         super().__init__("null")
+        self.is_instantiable = False
+        self.is_object_type = True
+    def is_subtype_of(self, other):
+        if self == other: return True
+        if not other.is_instantiable: return False
+        return True
 
 
 class JavaTypeError(Exception):

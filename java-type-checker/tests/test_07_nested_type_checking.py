@@ -43,7 +43,6 @@ class TestNestedTypeChecking(TypeTest):
         gobj = JavaVariable("gobj", Graphics.graphics_object)
         group = JavaVariable("group", Graphics.graphics_group)
         rect = JavaVariable("rect", Graphics.rectangle)
-
         self.assertCompileError(
             JavaTypeMismatchError,
             "GraphicsGroup.getElementAt() expects arguments of type (Point), but got (Rectangle)",
@@ -60,6 +59,7 @@ class TestNestedTypeChecking(TypeTest):
         #
         #     rect.setFillColor(           // Should not flag this “GraphicsObject ≠ Paint” error...
         #         group.getElementAt(red)); // ...because it detects this type error first
+        # rect.setFillColor(group.getElementAt(red));
 
         rect = JavaVariable("rect", Graphics.rectangle)
         group = JavaVariable("group", Graphics.graphics_group)
