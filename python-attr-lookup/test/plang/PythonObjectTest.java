@@ -21,7 +21,7 @@ class PythonObjectTest {
      *   class Foo:
      *     pass
      *
-     *   class Bar:
+     *   class Bar(Foo):
      *     pass
      *
      *   foo = Foo()
@@ -146,6 +146,22 @@ class PythonObjectTest {
 
         assertEqualsPyStr("rainbow",    fooType.get("socks"));
         assertEqualsPyStr("chartreuse", foo.get("socks"));
+        assertEqualsPyStr("rainbow",    barType.get("socks"));
+        assertEqualsPyStr("rainbow",    bar.get("socks"));
+    }
+
+    @Test
+    void overrideInheritedAttrsWithNull() throws Exception {
+        // Equivalent Python:
+        //
+        //   Foo.socks = "rainbow"
+        //   foo.socks = None
+
+        fooType.set("socks", new PythonString("rainbow"));
+        foo.set("socks", null);
+
+        assertEqualsPyStr("rainbow",    fooType.get("socks"));
+        assertEqualsPyStr(null, foo.get("socks"));
         assertEqualsPyStr("rainbow",    barType.get("socks"));
         assertEqualsPyStr("rainbow",    bar.get("socks"));
     }

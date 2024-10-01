@@ -6,7 +6,7 @@ import unittest
 
 
 class TestClassStructure(unittest.TestCase):
-
+ 
     def test_00_finds_method_by_name(self):
         method = Graphics.point.method_named("getX")
         self.assertEqual("getX", method.name)

@@ -13,7 +13,7 @@ public class PythonAttributeException extends Exception {
             + "' object has no attribute '"
             + attrName
             + "'");
-
+        
         this.pyobject = pyobject;
         this.attrName = attrName;
     }
