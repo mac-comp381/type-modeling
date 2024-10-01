@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from .types import JavaBuiltInTypes, JavaTypeError
-
+from ast import arguments
+from .types import JavaBuiltInTypes, JavaTypeError, NoSuchJavaMethod
+from java_type_checker.types import JavaPrimitiveType
 
 class JavaExpression(object):
     """AST for simple Java expressions.
@@ -38,6 +39,12 @@ class JavaVariable(JavaExpression):
     def __init__(self, name, declared_type):
         self.name = name                    #: The name of the variable (str)
         self.declared_type = declared_type  #: The declared type of the variable (JavaType)
+        
+    def static_type(self):
+        return self.declared_type
+    
+    def check_types(self):
+        return
 
 
 class JavaLiteral(JavaExpression):
@@ -46,6 +53,12 @@ class JavaLiteral(JavaExpression):
     def __init__(self, value, type):
         self.value = value  #: The literal value, as a string
         self.type = type    #: The type of the literal (JavaType)
+        
+    def static_type(self):
+        return self.type
+    
+    def check_types(self):
+        return
 
 
 class JavaNullLiteral(JavaLiteral):
@@ -53,6 +66,9 @@ class JavaNullLiteral(JavaLiteral):
     """
     def __init__(self):
         super().__init__("null", JavaBuiltInTypes.NULL)
+        
+    def static_type(self):
+        return JavaBuiltInTypes.NULL
 
 
 class JavaAssignment(JavaExpression):
@@ -65,6 +81,16 @@ class JavaAssignment(JavaExpression):
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
+        
+    def static_type(self):
+        return self.lhs.declared_type
+        
+    def check_types(self):
+        lhs_type = self.lhs.static_type()
+        rhs_type = self.rhs.static_type()
+
+        if not rhs_type.is_subtype_of(lhs_type):
+            raise JavaTypeMismatchError(f"Cannot assign {rhs_type.name} to variable {self.lhs.name} of type {lhs_type.name}")
 
 
 class JavaMethodCall(JavaExpression):
@@ -87,6 +113,38 @@ class JavaMethodCall(JavaExpression):
         self.receiver = receiver
         self.method_name = method_name
         self.args = args
+        
+    def static_type(self):
+        receiver_type = self.receiver.static_type()
+        method = receiver_type.method_named(self.method_name)
+        return method.return_type
+    
+    def check_types(self):
+        receiver_type = self.receiver.static_type()
+        
+        actual_arguments = []
+        
+        for arg in self.args:
+            actual_arguments.append(arg.static_type())
+        
+        try:
+            method = receiver_type.method_named(self.method_name)
+        except:
+            raise NoSuchJavaMethod(f"Type {receiver_type.name} does not have methods")
+        
+        if len(self.args) != len(method.parameter_types):
+            raise JavaArgumentCountError(
+                f"Wrong number of arguments for {receiver_type.name}.{self.method_name}(): "
+                f"expected {len(method.parameter_types)}, got {len(self.args)}"
+            )
+            
+        arg_types = [arg.static_type() for arg in self.args]
+        param_types = method.parameter_types
+        for i, (arg_type, param_type) in enumerate(zip(arg_types, param_types)):
+            if not arg_type.is_subtype_of(param_type):
+                raise JavaTypeMismatchError(
+                    f"{receiver_type.name}.{self.method_name}() expects arguments of type {_names(method.parameter_types)}, but got {_names(actual_arguments)}"
+                )
 
 
 class JavaConstructorCall(JavaExpression):
@@ -107,6 +165,9 @@ class JavaConstructorCall(JavaExpression):
     def __init__(self, instantiated_type, *args):
         self.instantiated_type = instantiated_type
         self.args = args
+        
+    def static_type(self):
+        return self.instantiated_type
 
 
 class JavaTypeMismatchError(JavaTypeError):

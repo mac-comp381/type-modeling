@@ -41,7 +41,17 @@ public class PythonType extends PythonObject {
 
     @Override
     protected List<PythonObject> buildMRO() {
-        throw new UnsupportedOperationException("not implemented yet");
+        List<PythonObject> builtObjMRO = new ArrayList<>();
+
+        builtObjMRO.add(this);
+
+        if (base != null) {
+            for (PythonObject type : base.getMRO()) {
+                builtObjMRO.add(type);
+            }
+        }
+
+        return builtObjMRO;
     }
 
     /**
@@ -49,7 +59,7 @@ public class PythonType extends PythonObject {
      * this PythonType.
      */
     public PythonObject instantiate() {
-        throw new UnsupportedOperationException("not implemented yet");
+        return new PythonObject(this);
     }
 
     @Override
