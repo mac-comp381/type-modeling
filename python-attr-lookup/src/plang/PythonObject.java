@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.print.AttributeException;
+
 /**
  * The runtime state of an object in Python.
  */
@@ -51,7 +53,13 @@ public class PythonObject {
      * result (i.e. it remembers the list buildMRO() returned and keeps returning it).
      */
     protected List<PythonObject> buildMRO() {
-        throw new UnsupportedOperationException("not implemented yet");
+        if (mro == null) {
+            mro = new ArrayList<>();
+            mro.add(this);
+            mro.addAll(type.getMRO());
+        }
+        return mro;
+        // throw new UnsupportedOperationException("not implemented yet");
     }
 
     /**
@@ -62,7 +70,28 @@ public class PythonObject {
      * @throws PythonAttributeException When there is no attribute on this object with that name.
      */
     public final PythonObject get(String attrName) throws PythonAttributeException {
-        throw new UnsupportedOperationException("not implemented yet");
+        // PythonObject attr = attrs.get(attrName);
+        for (PythonObject obj : getMRO()) {
+            if (obj.attrs.containsKey(attrName)) {
+                return obj.attrs.get(attrName);
+            }
+        }
+        throw new PythonAttributeException(this, attrName);
+
+        // If the obj does not have the key
+        // if (!attrs.containsKey(attrName)) {
+        //     // If it has a type
+        //     if (type != null) {
+        //         // Get attr from type
+        //         try {
+        //             return type.get(attrName);
+        //         } catch (Exception e) {}
+        //     }
+        //     throw new PythonAttributeException(this, attrName);
+        // }       
+        // return attr;
+
+        // throw new UnsupportedOperationException("not implemented yet");
     }
 
     /**
@@ -74,7 +103,8 @@ public class PythonObject {
      * @param value Its new value
      */
     public final void set(String attrName, PythonObject value) {
-        throw new UnsupportedOperationException("not implemented yet");
+        attrs.put(attrName, value);
+        // throw new UnsupportedOperationException("not implemented yet");
     }
 
     @Override
