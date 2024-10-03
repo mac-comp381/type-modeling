@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .types import JavaBuiltInTypes, JavaTypeError
+from .types import JavaBuiltInTypes, JavaTypeError, NoSuchJavaMethod
 
 
 class JavaExpression(object):
@@ -39,6 +39,12 @@ class JavaVariable(JavaExpression):
         self.name = name                    #: The name of the variable (str)
         self.declared_type = declared_type  #: The declared type of the variable (JavaType)
 
+    def static_type(self):
+        return self.declared_type
+    
+    def check_types(self):
+        return
+
 
 class JavaLiteral(JavaExpression):
     """A literal value entered in the code, e.g. `5` in the expression `x + 5`.
@@ -46,6 +52,12 @@ class JavaLiteral(JavaExpression):
     def __init__(self, value, type):
         self.value = value  #: The literal value, as a string
         self.type = type    #: The type of the literal (JavaType)
+
+    def static_type(self):
+        return self.type
+
+    def check_types(self):
+        return
 
 
 class JavaNullLiteral(JavaLiteral):
@@ -66,6 +78,17 @@ class JavaAssignment(JavaExpression):
         self.lhs = lhs
         self.rhs = rhs
 
+    def static_type(self):
+        return self.lhs.static_type()
+    
+    def check_types(self):
+        rhs_type = self.rhs.static_type()
+        lhs_type = self.lhs.static_type()
+        self.rhs.check_types()
+        if (not lhs_type.is_supertype_of(rhs_type) and lhs_type != rhs_type):
+            raise JavaTypeMismatchError("Cannot assign {0} to variable {1} of type {2}".format(
+                rhs_type.name, self.lhs.name, lhs_type.name))
+        
 
 class JavaMethodCall(JavaExpression):
     """A Java method invocation.
@@ -88,6 +111,37 @@ class JavaMethodCall(JavaExpression):
         self.method_name = method_name
         self.args = args
 
+    def static_type(self):
+        return self.receiver.declared_type.method_named(self.method_name).return_type
+    
+    def check_types(self):
+        self.receiver.check_types()
+        for element in self.args:
+            element.check_types()
+
+        self.receiver.static_type().method_named(self.method_name)
+
+        expected_args = self.receiver.static_type().method_named(self.method_name).parameter_types
+        given_args = [element.static_type() for element in self.args]
+
+        if (len(expected_args) != len(given_args)):
+            raise JavaArgumentCountError("Wrong number of arguments for {0}.{1}(): expected {2}, got {3}".format(
+                self.receiver.static_type().name, self.method_name, len(expected_args), len(given_args)))
+        
+        error = False
+        arg_iter = iter(given_args)
+        for arg in expected_args:
+            if (not next(arg_iter).is_subtype_of(arg)):
+                error = True
+        
+        if (error):
+            expected_arg_names = [element.name for element in expected_args]
+            given_arg_names = [element.name for element in given_args]
+            delim = ", "
+            raise JavaTypeMismatchError("{0}.{1}() expects arguments of type ({2}), but got ({3})".format(
+                self.receiver.static_type().name, self.method_name, delim.join(expected_arg_names), delim.join(given_arg_names)))
+        
+        
 
 class JavaConstructorCall(JavaExpression):
     """
