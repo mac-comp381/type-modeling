@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
 
+class JavaTypeError(Exception):
+    """Base class for Java type errors."""
+    pass
+
+class NoSuchJavaMethod(JavaTypeError):
+    """Indicates a call to a nonexistent method on a Java object."""
+    def __init__(self, message):
+        super().__init__(message)
 
 class JavaType(object):
     """The base type for all Java types, including object types, primitives, and special types.
@@ -56,6 +64,7 @@ class JavaConstructor(object):
         self.parameter_types = parameter_types
 
 
+
 class JavaMethod(object):
     """The declaration of a Java method.
 
@@ -88,6 +97,9 @@ class JavaPrimitiveType(JavaType):
 
     Primitive types are not object types and do not have methods.
     """
+    def is_subtype_of(self, other):
+        # Check if 'other' is the same instance as 'self'
+        return self is other
 
 
 class JavaObjectType(JavaType):
@@ -133,6 +145,15 @@ class JavaObjectType(JavaType):
                     pass
             raise NoSuchJavaMethod("{0} has no method named {1}".format(self.name, name))
 
+    def is_subtype_of(self, other):
+        if self is other:
+            return True
+        # check all direct and indirect supertypes
+        for supertype in self.direct_supertypes:
+            if supertype.is_subtype_of(other):
+                return True
+        return False
+    
 
 class JavaVoidType(JavaType):
     """The Java type `void`.
@@ -144,24 +165,30 @@ class JavaVoidType(JavaType):
         super().__init__("void")
 
 
+
 class JavaNullType(JavaType):
     """The type of the value `null` in Java.
 
     Null acts as though it is a subtype of all object types. However, it raises an exception for any
     attempt to look up a method.
     """
+    is_object_type = True
+    is_instantiable = False
+
     def __init__(self):
         super().__init__("null")
 
+    def is_subtype_of(self, other):
+        # null is considered a subtype of any object type, but not of primitive types
+        return isinstance(other, JavaObjectType) or other is self
+    
+    def method_named(self, method_name):
+    # When trying to call a method on null, raise NoSuchJavaMethod with the specific message
+         raise NoSuchJavaMethod(f"Cannot invoke method {method_name}() on null")
 
+    
 class JavaTypeError(Exception):
     """Indicates a compile-time type error in an expression.
-    """
-    pass
-
-
-class NoSuchJavaMethod(JavaTypeError):
-    """Indicates a call to a nonexistent method on a Java object.
     """
     pass
 

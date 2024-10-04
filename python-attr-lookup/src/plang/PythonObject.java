@@ -10,7 +10,10 @@ import java.util.Map;
  * The runtime state of an object in Python.
  */
 public class PythonObject {
-    private final Map<String,PythonObject> attrs = new HashMap<>();
+
+    // just totally violate encapsulation
+    protected final Map<String,PythonObject> attrs = new HashMap<>();
+    // it's fine I'm sure this will have no repercussions whatsoever
     private final PythonType type;
     private List<PythonObject> mro;
 
@@ -51,7 +54,18 @@ public class PythonObject {
      * result (i.e. it remembers the list buildMRO() returned and keeps returning it).
      */
     protected List<PythonObject> buildMRO() {
-        throw new UnsupportedOperationException("not implemented yet");
+        List<PythonObject> mro = new ArrayList<>();
+        mro.add(this); // Add this object itself
+        mro.addAll(this.type.getMRO()); // Add the MRO of the object's type
+        return mro;
+    }
+
+    protected boolean hasAttribute(String attrName) {
+        return attrs.containsKey(attrName);
+    }
+
+    protected PythonObject getAttribute(String attrName) {
+        return attrs.get(attrName); // May return null
     }
 
     /**
@@ -61,9 +75,21 @@ public class PythonObject {
      * @return Its value if found.
      * @throws PythonAttributeException When there is no attribute on this object with that name.
      */
-    public final PythonObject get(String attrName) throws PythonAttributeException {
-        throw new UnsupportedOperationException("not implemented yet");
+
+public final PythonObject get(String attrName) throws PythonAttributeException {
+    if (hasAttribute(attrName)) {
+        return getAttribute(attrName);
     }
+
+    for (PythonObject obj : getMRO()) {
+        if (obj.hasAttribute(attrName)) {
+            return obj.getAttribute(attrName);
+        }
+    }
+
+    throw new PythonAttributeException(this, attrName);
+}
+
 
     /**
      * Add or changes the value of an attribute on this object. Note that it sets the value for
@@ -74,7 +100,7 @@ public class PythonObject {
      * @param value Its new value
      */
     public final void set(String attrName, PythonObject value) {
-        throw new UnsupportedOperationException("not implemented yet");
+        attrs.put(attrName, value);
     }
 
     @Override
