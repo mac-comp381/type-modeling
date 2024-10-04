@@ -8,7 +8,7 @@ class JavaType(object):
         name (str): Name of this type. **Note:** Names are not necessarily unique.
     """
 
-    is_object_type = False   #: Indicates whether members of this type are objects (bool)
+    is_object_type = False  #: Indicates whether members of this type are objects (bool)
     is_instantiable = False  #: Indicates whether `new` can create instances of this type (bool)
 
     def __init__(self, name):
@@ -52,6 +52,7 @@ class JavaConstructor(object):
     Attributes:
         parameter_types (list of JavaType): Declared parameter types
     """
+
     def __init__(self, parameter_types=[]):
         self.parameter_types = parameter_types
 
@@ -77,6 +78,7 @@ class JavaMethod(object):
         parameter_types (list of JavaType): Declared parameter types
         return_type (JavaType): Method’s declared return type
     """
+
     def __init__(self, name, parameter_types=[], return_type=None):
         self.name = name
         self.parameter_types = parameter_types
@@ -88,6 +90,11 @@ class JavaPrimitiveType(JavaType):
 
     Primitive types are not object types and do not have methods.
     """
+
+    def is_subtype_of(self, other):
+        if other == self:
+            return True
+        return False  # Primitive types aren't subtypes of anything.
 
 
 class JavaObjectType(JavaType):
@@ -133,6 +140,14 @@ class JavaObjectType(JavaType):
                     pass
             raise NoSuchJavaMethod("{0} has no method named {1}".format(self.name, name))
 
+    def is_subtype_of(self, other):
+        if other == self:
+            return True
+        for supertype in self.direct_supertypes:
+            if supertype.is_subtype_of(other):
+                return True
+        return False
+
 
 class JavaVoidType(JavaType):
     """The Java type `void`.
@@ -140,8 +155,14 @@ class JavaVoidType(JavaType):
     It is never legal to use the result of a method returning void inside a larger expression.
     Void is therefore subtype only of itself, and not any other type.
     """
+
     def __init__(self):
         super().__init__("void")
+
+    def is_subtype_of(self, other):
+        if other == self:
+            return True
+        return False
 
 
 class JavaNullType(JavaType):
@@ -150,8 +171,18 @@ class JavaNullType(JavaType):
     Null acts as though it is a subtype of all object types. However, it raises an exception for any
     attempt to look up a method.
     """
+
     def __init__(self):
         super().__init__("null")
+        self.is_object_type = True
+
+    def is_subtype_of(self, other):
+        if other.is_object_type:
+            return True
+        return False
+
+    def method_named(self, method_name):
+        raise NoSuchJavaMethod("Cannot invoke method " + method_name + "() on null")
 
 
 class JavaTypeError(Exception):
@@ -171,13 +202,13 @@ class JavaBuiltInTypes:
 
     (We only include a few of Java's language-provided types.)
     """
-    VOID    = JavaVoidType()
+    VOID = JavaVoidType()
 
     BOOLEAN = JavaPrimitiveType("boolean")
-    INT     = JavaPrimitiveType("int")
-    DOUBLE  = JavaPrimitiveType("double")
+    INT = JavaPrimitiveType("int")
+    DOUBLE = JavaPrimitiveType("double")
 
-    NULL    = JavaNullType()
+    NULL = JavaNullType()
 
     OBJECT = JavaObjectType(
         "Object",
