@@ -88,6 +88,12 @@ class JavaPrimitiveType(JavaType):
 
     Primitive types are not object types and do not have methods.
     """
+    def is_subtype_of(self, other):
+        
+        """Returns True if and only if a value of this type can be used in a context that expects
+        the given type.
+        """
+        return self.name == other.name
 
 
 class JavaObjectType(JavaType):
@@ -132,6 +138,15 @@ class JavaObjectType(JavaType):
                 except NoSuchJavaMethod:
                     pass
             raise NoSuchJavaMethod("{0} has no method named {1}".format(self.name, name))
+        
+    def is_subtype_of(self, other):
+        """Returns True if and only if a value of this type can be used in a context that expects
+        the given type.
+        """
+        for supertype in self.direct_supertypes:
+            if supertype.is_subtype_of(other):
+                return True
+        return (self.name == other.name)
 
 
 class JavaVoidType(JavaType):
@@ -150,8 +165,27 @@ class JavaNullType(JavaType):
     Null acts as though it is a subtype of all object types. However, it raises an exception for any
     attempt to look up a method.
     """
+    is_object_type = True
+    is_instantiable = False  #: Indicates whether `new` can create instances of this type (bool)
+
     def __init__(self):
         super().__init__("null")
+    def is_subtype_of(self, other):
+        """Returns True if and only if a value of this type can be used in a context that expects
+        the given type.
+        """
+        if other.name == "int" or other.name == "boolean" or other.name == "double":
+            return False
+        return True
+    def method_named(self, method_name):
+        """Returns the JavaMethod with the given name, which may come from a supertype.
+
+        Raises:
+            NoSuchJavaMethod if the type has no method with the give name (or no methods at all)
+        """
+        raise NoSuchJavaMethod("Cannot invoke method {0}() on null".format(method_name))
+    
+
 
 
 class JavaTypeError(Exception):

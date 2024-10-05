@@ -150,6 +150,22 @@ class PythonObjectTest {
         assertEqualsPyStr("rainbow",    bar.get("socks"));
     }
 
+    @Test
+    void overrideInheritedAttrsWithNull() throws Exception {
+        // Equivalent Python:
+        //
+        //   Foo.socks = "rainbow"
+        //   foo.socks = null
+
+        fooType.set("socks", new PythonString("rainbow"));
+        foo.set("socks", null);
+
+        assertEqualsPyStr("rainbow",    fooType.get("socks"));
+        assertEqualsPyStr(null, foo.get("socks"));
+        assertEqualsPyStr("rainbow",    barType.get("socks"));
+        assertEqualsPyStr("rainbow",    bar.get("socks"));
+    }
+
     // –––––– Helpers ––––––
 
     private void assertEqualsPyStr(String str, PythonObject pyobj) {
