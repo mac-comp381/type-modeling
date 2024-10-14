@@ -18,14 +18,14 @@ class PythonObjectTest {
     /**
      * Equivalent Python:
      *
-     *   class Foo:
-     *     pass
+     * class Foo:
+     * pass
      *
-     *   class Bar:
-     *     pass
+     * class Bar:
+     * pass
      *
-     *   foo = Foo()
-     *   bar = Bar()
+     * foo = Foo()
+     * bar = Bar()
      */
     @BeforeEach
     void createTestTypeHierarchy() {
@@ -47,29 +47,29 @@ class PythonObjectTest {
     @Test
     void typeMroIncludesSelf() throws Exception {
         assertEquals(
-            Collections.singletonList(fooType),
-            fooType.getMRO());
+                Collections.singletonList(fooType),
+                fooType.getMRO());
     }
 
     @Test
     void typeMroIncludesBaseClass() throws Exception {
         assertEquals(
-            Arrays.asList(barType, fooType),
-            barType.getMRO());
+                Arrays.asList(barType, fooType),
+                barType.getMRO());
     }
 
     @Test
     void objectMroIncludesType() throws Exception {
         assertEquals(
-            Arrays.asList(foo, fooType),
-            foo.getMRO());
+                Arrays.asList(foo, fooType),
+                foo.getMRO());
     }
 
     @Test
     void objectMroIncludesBaseClass() throws Exception {
         assertEquals(
-            Arrays.asList(bar, barType, fooType),
-            bar.getMRO());
+                Arrays.asList(bar, barType, fooType),
+                bar.getMRO());
     }
 
     // –––––– Attribute lookup tests ––––––
@@ -88,10 +88,10 @@ class PythonObjectTest {
         bar.set("flavor", new PythonString("ineffable"));
 
         PythonAttributeException error = assertThrows(
-            PythonAttributeException.class,
-            () -> {
-                foo.get("flavor");
-            } );
+                PythonAttributeException.class,
+                () -> {
+                    foo.get("flavor");
+                });
         assertSame(foo, error.getPyObject());
         assertEquals("flavor", error.getAttrName());
     }
@@ -99,17 +99,17 @@ class PythonObjectTest {
     @Test
     void objectsSupportNullValues() throws Exception {
         foo.set("worries", null);
-        assertEquals(null, foo.get("worries"));  // No exception!
+        assertEquals(null, foo.get("worries")); // No exception!
     }
 
     @Test
     void findInheritedAttrs() throws Exception {
         // Equivalent Python:
         //
-        //   Foo.socks = "rainbow"   # Type attributes...
-        //   foo.socks               # ...show up on instances of the type...
-        //   Bar.socks               # ...and on subtypes...
-        //   bar.socks               # ...and on instances of subtypes too!
+        // Foo.socks = "rainbow" # Type attributes...
+        // foo.socks # ...show up on instances of the type...
+        // Bar.socks # ...and on subtypes...
+        // bar.socks # ...and on instances of subtypes too!
 
         fooType.set("socks", new PythonString("rainbow"));
         assertEqualsPyStr("rainbow", fooType.get("socks"));
@@ -122,14 +122,14 @@ class PythonObjectTest {
     void overrideInheritedAttrsInType() throws Exception {
         // Equivalent Python:
         //
-        //   Foo.socks = "rainbow"
-        //   Bar.socks = "polka dot"
+        // Foo.socks = "rainbow"
+        // Bar.socks = "polka dot"
 
         fooType.set("socks", new PythonString("rainbow"));
         barType.set("socks", new PythonString("polka dot"));
 
-        assertEqualsPyStr("rainbow",   fooType.get("socks"));
-        assertEqualsPyStr("rainbow",   foo.get("socks"));
+        assertEqualsPyStr("rainbow", fooType.get("socks"));
+        assertEqualsPyStr("rainbow", foo.get("socks"));
         assertEqualsPyStr("polka dot", barType.get("socks"));
         assertEqualsPyStr("polka dot", bar.get("socks"));
     }
@@ -138,22 +138,41 @@ class PythonObjectTest {
     void overrideInheritedAttrsInInstance() throws Exception {
         // Equivalent Python:
         //
-        //   Foo.socks = "rainbow"
-        //   foo.socks = "chartreuse"
+        // Foo.socks = "rainbow"
+        // foo.socks = "chartreuse"
 
         fooType.set("socks", new PythonString("rainbow"));
         foo.set("socks", new PythonString("chartreuse"));
 
-        assertEqualsPyStr("rainbow",    fooType.get("socks"));
+        assertEqualsPyStr("rainbow", fooType.get("socks"));
         assertEqualsPyStr("chartreuse", foo.get("socks"));
-        assertEqualsPyStr("rainbow",    barType.get("socks"));
-        assertEqualsPyStr("rainbow",    bar.get("socks"));
+        assertEqualsPyStr("rainbow", barType.get("socks"));
+        assertEqualsPyStr("rainbow", bar.get("socks"));
+    }
+
+    // –––––– Override inherited attrs with null ––––––
+
+    @Test
+    void overrideInheritedAttrsWithNull() throws Exception {
+        // Equivalent Python:
+        //
+        // Foo.socks = "rainbow"
+        // foo.socks = None
+
+        fooType.set("socks", new PythonString("rainbow"));
+
+        fooType.set("socks", null);
+        assertEqualsPyStr(null, fooType.get("socks"));
+        assertEqualsPyStr(null, foo.get("socks"));
+        assertEqualsPyStr(null, barType.get("socks"));
+        assertEqualsPyStr(null, bar.get("socks"));
+
     }
 
     // –––––– Helpers ––––––
 
     private void assertEqualsPyStr(String str, PythonObject pyobj) {
-        if(str == null || pyobj == null) {
+        if (str == null || pyobj == null) {
             assertEquals((Object) str, (Object) pyobj);
             return;
         }
