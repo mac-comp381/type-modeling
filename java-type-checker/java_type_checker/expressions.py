@@ -29,7 +29,7 @@ class JavaExpression(object):
 
 
 class JavaVariable(JavaExpression):
-    """An expression that reads the value of a variable, e.g. `x` in the expression `x + 5`.
+    """An expression that reads the value of a variable, e.g. x in the expression x + 5.
 
     In a real Java language implementation, the declared_type would be filled in by a name resolver
     after the initial construction of the AST. In this sample project, however, we simply specify
@@ -38,21 +38,37 @@ class JavaVariable(JavaExpression):
     def __init__(self, name, declared_type):
         self.name = name                    #: The name of the variable (str)
         self.declared_type = declared_type  #: The declared type of the variable (JavaType)
+    
+    def static_type(self):
+        return self.declared_type
+
+    def check_types(self):
+        pass
 
 
 class JavaLiteral(JavaExpression):
-    """A literal value entered in the code, e.g. `5` in the expression `x + 5`.
+    """A literal value entered in the code, e.g. 5 in the expression x + 5.
     """
     def __init__(self, value, type):
         self.value = value  #: The literal value, as a string
         self.type = type    #: The type of the literal (JavaType)
+    
+    def static_type(self):
+        return self.type
+    
+    def check_types(self):
+        pass
 
 
 class JavaNullLiteral(JavaLiteral):
-    """The literal value `null` in Java code.
+    """The literal value null in Java code.
     """
     def __init__(self):
         super().__init__("null", JavaBuiltInTypes.NULL)
+    
+    
+    
+    
 
 
 class JavaAssignment(JavaExpression):
@@ -65,6 +81,23 @@ class JavaAssignment(JavaExpression):
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
+    
+    def static_type(self):
+        return self.lhs.declared_type
+
+    def check_types(self):
+
+        self.lhs.check_types()
+        self.rhs.check_types()
+        
+        if not self.rhs.static_type().is_subtype_of(self.lhs.declared_type):
+            raise JavaTypeMismatchError(
+                "Cannot assign {} to variable {} of type {}".format(
+                    self.rhs.static_type().name,
+                    self.lhs.name,
+                    self.lhs.declared_type.name))
+    
+    
 
 
 class JavaMethodCall(JavaExpression):
@@ -74,9 +107,9 @@ class JavaMethodCall(JavaExpression):
 
         foo.bar(0, 1)
 
-    - The receiver is `JavaVariable(foo, JavaObjectType(...))`
-    - The method_name is `"bar"`
-    - The args are `[JavaLiteral("0", JavaBuiltInTypes.INT), ...etc...]`
+    - The receiver is JavaVariable(foo, JavaObjectType(...))
+    - The method_name is "bar"
+    - The args are [JavaLiteral("0", JavaBuiltInTypes.INT), ...etc...]
 
     Attributes:
         receiver (JavaExpression): The object whose method we are calling
@@ -87,7 +120,37 @@ class JavaMethodCall(JavaExpression):
         self.receiver = receiver
         self.method_name = method_name
         self.args = args
+    
+    def static_type(self):
+        return self.receiver.static_type().method_named(self.method_name).return_type
 
+
+    def check_types(self):# this was very hard😭
+            self.receiver.check_types()
+       
+            for arg in self.args:
+                arg.check_types()
+                
+            method = self.receiver.static_type().method_named(self.method_name)
+            if len(self.args) != len(method.parameter_types):
+                raise JavaArgumentCountError("Wrong number of arguments for {}: expected {}, got {}".format(
+                    self.receiver.static_type().name + "." + self.method_name + "()",
+                    len(method.parameter_types),
+                    len(self.args)))
+            
+
+            typesWeGot = [a.static_type() for a in self.args]
+
+            for arg, expected_type in zip(self.args, method.parameter_types):
+                if not arg.static_type().is_subtype_of(expected_type):
+                    raise JavaTypeMismatchError(
+                        "{} expects arguments of type {}, but got {}".format(
+                            self.receiver.static_type().name + "." + self.method_name + "()",
+                            _names(method.parameter_types),
+                            _names(typesWeGot))
+                    )
+                
+        
 
 class JavaConstructorCall(JavaExpression):
     """
@@ -97,8 +160,8 @@ class JavaConstructorCall(JavaExpression):
 
         new Foo(0, 1, 2)
 
-    - The instantiated_type is `JavaObjectType("Foo", ...)`
-    - The args are `[JavaLiteral("0", JavaBuiltInTypes.INT), ...etc...]`
+    - The instantiated_type is JavaObjectType("Foo", ...)
+    - The args are [JavaLiteral("0", JavaBuiltInTypes.INT), ...etc...]
 
     Attributes:
         instantiated_type (JavaType): The type to instantiate
@@ -122,7 +185,7 @@ class JavaArgumentCountError(JavaTypeError):
 
 
 class JavaIllegalInstantiationError(JavaTypeError):
-    """Raised in response to `new Foo()` where `Foo` is not an instantiable type.
+    """Raised in response to new Foo() where Foo is not an instantiable type.
     """
     pass
 
