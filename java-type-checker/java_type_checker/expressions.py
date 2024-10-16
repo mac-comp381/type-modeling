@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .types import JavaBuiltInTypes, JavaTypeError
+from .types import JavaBuiltInTypes, JavaTypeError, NoSuchJavaMethod, JavaMethod, JavaType
 
 
 class JavaExpression(object):
@@ -39,6 +39,12 @@ class JavaVariable(JavaExpression):
         self.name = name                    #: The name of the variable (str)
         self.declared_type = declared_type  #: The declared type of the variable (JavaType)
 
+    def static_type(self):
+        return self.declared_type
+
+    def check_types(self):
+        pass
+
 
 class JavaLiteral(JavaExpression):
     """A literal value entered in the code, e.g. `5` in the expression `x + 5`.
@@ -47,6 +53,11 @@ class JavaLiteral(JavaExpression):
         self.value = value  #: The literal value, as a string
         self.type = type    #: The type of the literal (JavaType)
 
+    def static_type(self):
+        return self.type
+
+    def check_types(self):
+        pass
 
 class JavaNullLiteral(JavaLiteral):
     """The literal value `null` in Java code.
@@ -66,27 +77,79 @@ class JavaAssignment(JavaExpression):
         self.lhs = lhs
         self.rhs = rhs
 
+    def static_type(self):
+        return self.lhs.static_type()
+
+    def check_types(self):
+        self.lhs.check_types()
+        self.rhs.check_types()
+
+        lhs_type = self.lhs.static_type()
+        rhs_type = self.rhs.static_type()
+
+        if not rhs_type.is_subtype_of(lhs_type):
+            raise JavaTypeMismatchError(
+                "Cannot assign {0} to variable {1} of type {2}".format(
+                    rhs_type.name,
+                    self.lhs.name,
+                    lhs_type.name
+                )
+            )
+
 
 class JavaMethodCall(JavaExpression):
-    """A Java method invocation.
+    """A Java method invocation."""
 
-    For example, in this Java code::
-
-        foo.bar(0, 1)
-
-    - The receiver is `JavaVariable(foo, JavaObjectType(...))`
-    - The method_name is `"bar"`
-    - The args are `[JavaLiteral("0", JavaBuiltInTypes.INT), ...etc...]`
-
-    Attributes:
-        receiver (JavaExpression): The object whose method we are calling
-        method_name (String): The name of the method to call
-        args (list of Expressions): The arguments to pass to the method
-    """
     def __init__(self, receiver, method_name, *args):
         self.receiver = receiver
         self.method_name = method_name
         self.args = args
+
+    def static_type(self):
+        receiver_type = self.receiver.static_type()
+
+        method = receiver_type.get_method(self.method_name)
+        return method.return_type
+
+    def check_types(self):
+        self.receiver.check_types()
+        receiver_type = self.receiver.static_type()
+
+        method = receiver_type.get_method(self.method_name)
+        expected_types = method.parameter_types
+
+        if len(expected_types) != len(self.args):
+            raise JavaArgumentCountError(
+                "Wrong number of arguments for {}.{}(): expected {}, got {}".format(
+                    receiver_type.name,
+                    self.method_name,
+                    len(expected_types),
+                    len(self.args)
+                )
+            )
+
+        expected_type_names = []
+        actual_type_names = []
+
+        for i in range(len(expected_types)):
+            arg = self.args[i]
+            expected_type = expected_types[i]
+
+            arg.check_types()
+            actual_type = arg.static_type()
+            expected_type_names.append(expected_type.name)
+            actual_type_names.append(actual_type.name)
+
+            if not actual_type.is_subtype_of(expected_type):
+                raise JavaTypeMismatchError(
+                    "{}.{}() expects arguments of type ({}), but got ({})".format(
+                        receiver_type.name,
+                        self.method_name,
+                        ', '.join(expected_type_names),
+                        ', '.join(actual_type_names)
+                    )
+                )
+
 
 
 class JavaConstructorCall(JavaExpression):
@@ -107,6 +170,11 @@ class JavaConstructorCall(JavaExpression):
     def __init__(self, instantiated_type, *args):
         self.instantiated_type = instantiated_type
         self.args = args
+
+    def static_type(self):
+        return self.instantiated_type
+
+
 
 
 class JavaTypeMismatchError(JavaTypeError):
@@ -131,3 +199,5 @@ def _names(named_things):
     """Helper for formatting pretty error messages
     """
     return "(" + ", ".join([e.name for e in named_things]) + ")"
+
+
