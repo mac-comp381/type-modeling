@@ -142,8 +142,9 @@ class JavaObjectType(JavaType):
         #     return True
         if self == other:
             return True
-        for thing in self.direct_supertypes:
-            return thing.is_subtype_of(other)
+        for supertype in self.direct_supertypes:
+            if supertype.is_subtype_of(other):
+                return True
         return False
 
 
@@ -163,8 +164,23 @@ class JavaNullType(JavaType):
     Null acts as though it is a subtype of all object types. However, it raises an exception for any
     attempt to look up a method.
     """
+    is_object_type = True
+
     def __init__(self):
         super().__init__("null")
+    
+    def is_subtype_of(self, other):
+        if not (other.is_object_type):
+            return False
+        return True
+    
+    def method_named(self, name):
+        raise NoSuchJavaMethod(
+            "Cannot invoke method {0}() on null".format(
+                name
+            )
+        )
+
 
 
 class JavaTypeError(Exception):
