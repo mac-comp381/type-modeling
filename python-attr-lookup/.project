@@ -1,34 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
 	<name>python-attr-lookup</name>
-	<comment>Project python-attr-lookup created by Buildship.</comment>
+	<comment></comment>
 	<projects>
 	</projects>
 	<buildSpec>
 		<buildCommand>
-			<name>org.eclipse.jdt.core.javabuilder</name>
+			<name>java.bs.JavaProblemChecker</name>
 			<arguments>
 			</arguments>
 		</buildCommand>
 		<buildCommand>
-			<name>org.eclipse.buildship.core.gradleprojectbuilder</name>
+			<name>com.microsoft.gradle.bs.importer.builder.BuildServerBuilder</name>
+			<triggers>full,incremental,</triggers>
 			<arguments>
 			</arguments>
 		</buildCommand>
 	</buildSpec>
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
-		<nature>org.eclipse.buildship.core.gradleprojectnature</nature>
+		<nature>com.microsoft.gradle.bs.importer.GradleBuildServerProjectNature</nature>
 	</natures>
 	<filteredResources>
 		<filter>
-			<id>1632192379701</id>
+			<id>1790376364528</id>
 			<name></name>
 			<type>30</type>
 			<matcher>
 				<id>org.eclipse.core.resources.regexFilterMatcher</id>
-				<arguments>node_modules|.git|__CREATED_BY_JAVA_LANGUAGE_SERVER__</arguments>
+				<arguments>node_modules|\.git|__CREATED_BY_JAVA_LANGUAGE_SERVER__</arguments>
 			</matcher>
 		</filter>
 	</filteredResources>
+	<variableList>
+		<variable>
+			<name>bspSchemaVersion</name>
+			<value>0.1.0</value>
+		</variable>
+	</variableList>
 </projectDescription>
