@@ -50,7 +50,7 @@ class PythonObjectTest {
             Collections.singletonList(fooType),
             fooType.getMRO());
     }
-
+ 
     @Test
     void typeMroIncludesBaseClass() throws Exception {
         assertEquals(
@@ -149,6 +149,20 @@ class PythonObjectTest {
         assertEqualsPyStr("rainbow",    barType.get("socks"));
         assertEqualsPyStr("rainbow",    bar.get("socks"));
     }
+    // —————— Null tests ——————
+
+    @Test 
+    void overrideInheritedAttrsWithNull() throws PythonAttributeException {
+        PythonType type = new PythonType("Example", null);
+        PythonObject obj = type.instantiate();
+
+        PythonString value = new PythonString("flavor");
+        type.set("flavor", value);
+        assertEqualsPyStr("flavor", obj.get("flavor"));
+
+        obj.set("flavor", null);
+        assertNull(obj.get("flavor"));
+    }
 
     // –––––– Helpers ––––––
 
@@ -161,4 +175,5 @@ class PythonObjectTest {
         assertEquals(PythonString.class, pyobj.getClass());
         assertEquals(str, pyobj.toString());
     }
+
 }
