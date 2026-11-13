@@ -1,0 +1,5 @@
+After comparing my solution with yours, I noticed that they were very similar. A lot of the main methods, like instantiate(), get(), set(), and buildMRO(), were similar.
+
+One difference I noticed was using any() in is_subtype_of() instead of my for loop. I think any() makes the code shorter, but I find the for loop easier for my own understanding. I also noticed that you used a helper method for checking argument types, while I put that code directly in JavaMethodCall. I think the helper method is a better way to avoid repeating code.
+
+Comparing the two solutions helped me understand that there can be different ways to write the same logic. I also noticed that my overrideInheritedAttrsWithNull test checked an extra case: setting null on an instance (foo), not just on a subclass (Bar). On the other hand, your test checked that setting null on Bar doesn't affect foo, which mine didn't check directly.
